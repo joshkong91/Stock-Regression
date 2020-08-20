@@ -1,0 +1,101 @@
+---
+title: "Stocks Predictions"
+author: "Josh Kong"
+date: "8/7/2020"
+output: pdf_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+stocks_raw <- read_csv("stocks.csv")
+```
+
+## Cleaning up the data
+```{r}
+#cleaning the column names
+colnames(stocks_raw) <- str_replace_all(colnames(stocks_raw)," ","_")
+colnames(stocks_raw) <- str_replace_all(colnames(stocks_raw),"/","_")
+
+#selecting the data point that we want
+stocks <-stocks_raw %>% 
+  select(No.,Ticker,Company,Sector,Industry,Country,Market_Cap,Price,Volume,P_E,Fwd_P_E,PEG,P_B,P_C,
+         P_S,Curr_R,Quick_R,RSI,Beta,Float,ROA,ROE,ROI,Profit_M,Oper_M, Perf_Week, Perf_Month, Perf_Quart, Perf_Half, Inst_Own,Insider_Own,Float_Short,Change)
+
+
+#replacing the "-" with NA (going to impute the data)
+for(i in 10:33){
+  for(j in 1:738)
+  {
+    if(stocks[[i]][j] == "-")
+    {
+      stocks[[i]][j] <- NA
+    }
+  }
+}
+
+
+#converting the last 6 columns with "%" into numerics
+stocks <- stocks %>% 
+  mutate(ROA = str_remove(ROA,"%"),
+         ROE = str_remove(ROE,"%"),
+         ROI = str_remove(ROI,"%"),
+         Profit_M = str_remove(Profit_M,"%"),
+         Oper_M = str_remove(Oper_M,"%"),
+         Change = str_remove(Change,"%"),
+         Perf_Week = str_remove(Perf_Week,"%"),
+         Perf_Month = str_remove(Perf_Month,"%"),
+         Perf_Quart = str_remove(Perf_Quart, "%"),
+         Perf_Half = str_remove(Perf_Half, "%"),
+         Inst_Own = str_remove(Inst_Own,"%"),
+         Insider_Own = str_remove(Insider_Own, "%"),
+         Float_Short = str_remove(Float_Short,"%"))
+#21:33
+#showing in the colnames which is a percentage
+for(i in 21:33)
+{
+  names(stocks)[i] <- paste0(names(stocks)[i],"_perc")
+}
+
+stocks <- stocks %>% 
+  mutate(Float = str_remove_all(Float, "[BM]"))
+
+#changing market cap in to numeric
+stocks <- stocks %>% 
+  mutate(Market_Cap = str_remove(Market_Cap,"B"),
+         Market_Cap = as.numeric(Market_Cap))
+names(stocks)[7] <- paste0(names(stocks)[7],"_B")
+
+#changing the columns into numerics
+for(i in 8:33)
+{
+  stocks[[i]] <- as.numeric(stocks[[i]])
+}
+```
+
+
+## Imputing the missing values with Randomforest
+```{r}
+library(randomForest)
+set.seed(1)
+stocks_impute <- stocks[7:33]
+stocks_imputed <- rfImpute(Change_perc ~ ., data = stocks_impute,iter = 6)
+stock_final <- cbind(stocks[1:6],stocks_imputed)
+stock_final[7:33] <- round(stock_final[7:33],2)
+```
+
+
+## Writing the CSV of the file
+```{r}
+write.csv(stock_final, "stocks_final.csv", row.names = FALSE)
+```
+
+
+
+
+

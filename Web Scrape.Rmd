@@ -1,0 +1,188 @@
+---
+title: "Stock Regression Web Scrape"
+author: "Josh Kong"
+date: "8/10/2020"
+output: pdf_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+```
+
+
+## Web Scraping from finviz.com LARGE+ COMPANIES
+```{r}
+library(rvest)
+#overview
+overview <- read_html("https://finviz.com/screener.ashx?v=111&f=cap_largeover") %>% 
+  html_nodes(".table-top-s , .table-top , .table-top-h , .screener-link-primary , .screener-link") %>% 
+  html_text()
+overview <- matrix(overview, ncol = 11,byrow = TRUE)
+variables <- overview[1,]
+overview <- overview[-1,]
+colnames(overview) <- variables
+for(i in 1:36)
+{
+  m <- i - 1
+  num <- 21 + 20*m
+  link <- paste0("https://finviz.com/screener.ashx?v=111&f=cap_largeover&r=",num)
+  over <- read_html(link) %>% 
+  html_nodes(".table-top-s , .table-top , .table-top-h , .screener-link-primary , .screener-link") %>% 
+  html_text()
+  over <- matrix(over, ncol = 11,byrow = TRUE)
+  variable <- over[1,]
+  over<- over[-1,]
+  colnames(over) <- variable
+  overview <- rbind(overview,over)
+}
+overview <- as_tibble(overview)
+
+
+#technical
+technical <- read_html("https://finviz.com/screener.ashx?v=171&f=cap_largeover") %>% 
+  html_nodes(".table-top-s , .table-top , .table-top-h , .screener-link-primary , .screener-link") %>% 
+  html_text()
+  technical <- matrix(technical, ncol = 15,byrow = TRUE)
+  variable <- technical[1,]
+  technical<- technical[-1,]
+  colnames(technical) <- variable
+for(i in 1:36)
+{
+  m <- i - 1
+  num <- 21 + 20*m
+  link <- paste0("https://finviz.com/screener.ashx?v=171&f=cap_largeover&r=",num)
+  tech <- read_html(link) %>% 
+  html_nodes(".table-top-s , .table-top , .table-top-h , .screener-link-primary , .screener-link") %>% 
+  html_text()
+  tech <- matrix(tech, ncol = 15,byrow = TRUE)
+  variable <- tech[1,]
+  tech<- tech[-1,]
+  colnames(tech) <- variable
+  technical <- rbind(technical,tech)
+}
+technical <- as_tibble(technical)
+stocks <- left_join(overview, technical, all.x = TRUE)
+
+#valuation 
+valuation  <- read_html("https://finviz.com/screener.ashx?v=121&f=cap_largeover") %>% 
+  html_nodes(".table-top-s , .table-top , .table-top-h , .screener-link-primary , .screener-link") %>% 
+  html_text()
+  valuation  <- matrix(valuation , ncol = 18,byrow = TRUE)
+  variable <- valuation[1,]
+  valuation <- valuation[-1,]
+  colnames(valuation ) <- variable
+for(i in 1:36)
+{
+  m <- i - 1
+  num <- 21 + 20*m
+  link <- paste0("https://finviz.com/screener.ashx?v=121&f=cap_largeover&r=",num)
+  val <- read_html(link) %>% 
+  html_nodes(".table-top-s , .table-top , .table-top-h , .screener-link-primary , .screener-link") %>% 
+  html_text()
+  val <- matrix(val, ncol = 18,byrow = TRUE)
+  variable <- val[1,]
+  val<- val[-1,]
+  colnames(val) <- variable
+  valuation  <- rbind(valuation ,val)
+}
+valuation  <- as_tibble(valuation)
+stocks <- left_join(stocks, valuation)
+
+#financial
+financial<- read_html("https://finviz.com/screener.ashx?v=161&f=cap_largeover") %>% 
+  html_nodes(".table-top-s , .table-top , .table-top-h , .screener-link-primary , .screener-link") %>% 
+  html_text()
+  financial <- matrix(financial, ncol = 18,byrow = TRUE)
+  variable <- financial[1,]
+  financial <- financial[-1,]
+  colnames(financial) <- variable
+for(i in 1:36)
+{
+  m <- i - 1
+  num <- 21 + 20*m
+  link <- paste0("https://finviz.com/screener.ashx?v=161&f=cap_largeover&r=",num)
+  fin <- read_html(link) %>% 
+  html_nodes(".table-top-s , .table-top , .table-top-h , .screener-link-primary , .screener-link") %>% 
+  html_text()
+  fin <- matrix(fin, ncol = 18,byrow = TRUE)
+  variable <- fin[1,]
+  fin<- fin[-1,]
+  colnames(fin) <- variable
+  financial  <- rbind(financial ,fin)
+}
+financial  <- as_tibble(financial)
+stocks <- left_join(stocks, financial)
+
+#performance
+performance<- read_html("https://finviz.com/screener.ashx?v=141&f=cap_largeover") %>% 
+  html_nodes(".table-top-s , .table-top , .table-top-h , .screener-link-primary , .screener-link") %>% 
+  html_text()
+  performance <- matrix(performance, ncol = 16,byrow = TRUE)
+  variable <- performance[1,]
+  performance <- performance[-1,]
+  colnames(performance) <- variable
+for(i in 1:36)
+{
+  m <- i - 1
+  num <- 21 + 20*m
+  link <- paste0("https://finviz.com/screener.ashx?v=141&f=cap_largeover&r=",num)
+  fin <- read_html(link) %>% 
+  html_nodes(".table-top-s , .table-top , .table-top-h , .screener-link-primary , .screener-link") %>% 
+  html_text()
+  fin <- matrix(fin, ncol = 16,byrow = TRUE)
+  variable <- fin[1,]
+  fin<- fin[-1,]
+  colnames(fin) <- variable
+  performance  <- rbind(performance ,fin)
+}
+performance  <- as_tibble(performance)
+stocks <- left_join(stocks, performance)
+
+#ownership
+ownership<- read_html("https://finviz.com/screener.ashx?v=131&f=cap_largeover") %>% 
+  html_nodes(".table-top-s , .table-top , .table-top-h , .screener-link-primary , .screener-link") %>% 
+  html_text()
+  ownership <- matrix(ownership, ncol = 15,byrow = TRUE)
+  variable <- ownership[1,]
+  ownership <- ownership[-1,]
+  colnames(ownership) <- variable
+for(i in 1:36)
+{
+  m <- i - 1
+  num <- 21 + 20*m
+  link <- paste0("https://finviz.com/screener.ashx?v=131&f=cap_largeover&r=",num)
+  fin <- read_html(link) %>% 
+  html_nodes(".table-top-s , .table-top , .table-top-h , .screener-link-primary , .screener-link") %>% 
+  html_text()
+  fin <- matrix(fin, ncol = 15,byrow = TRUE)
+  variable <- fin[1,]
+  fin<- fin[-1,]
+  colnames(fin) <- variable
+  ownership  <- rbind(ownership ,fin)
+}
+ownership  <- as_tibble(ownership)
+stocks <- inner_join(stocks, ownership)
+
+
+
+
+write.csv(stocks, "stocks.csv", row.names = FALSE)
+```
+
+
+
+
+
+
+
+
+
+
+
+
